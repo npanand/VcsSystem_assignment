@@ -65,7 +65,7 @@ namespace VcsSystem_assignment.Repository
             }
             catch (Exception ex)
             {
-                // Handle or log the exception as needed
+                
                 throw new InvalidOperationException($"An error occurred while updating the employee: {ex.Message}");
             }
         }
@@ -102,6 +102,11 @@ namespace VcsSystem_assignment.Repository
         }
 
         internal void AddEmployee(Employee employee)
+        {
+            throw new NotImplementedException();
+        }
+
+        internal void UpdateEmployee(Employee existingEmployee)
         {
             throw new NotImplementedException();
         }

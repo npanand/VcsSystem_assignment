@@ -2,6 +2,7 @@
 using Microsoft.EntityFrameworkCore;
 using VcsSystem_assignment.Models;
 using VcsSystem_assignment.Repository;
+using System.IO;
 
 namespace VcsSystem_assignment.Controllers
 {
@@ -13,151 +14,140 @@ namespace VcsSystem_assignment.Controllers
         public EmployeeController(EmployeeRepository employeeRepository, IWebHostEnvironment webHostEnvironment)
         {
             _employeeRepository = employeeRepository;
-            _webHostEnvironment=webHostEnvironment;
+            _webHostEnvironment = webHostEnvironment;
         }
 
         [HttpGet]
         public IActionResult Index()
         {
-            try { 
-            var employeeList = _employeeRepository.GetAllEmployees().ToList();
-            return View(employeeList);
-             }
-             catch (Exception ex)
+            try
+            {
+                var employeeList = _employeeRepository.GetAllEmployees().ToList();
+                return View(employeeList);
+            }
+            catch (Exception)
             {
                 TempData["Error"] = "Db error";
-                return View();
+                return View(new List<Employee>());
             }
         }
-        [HttpGet]
-        public IActionResult Create()
-        {
 
-            return View();
+        [HttpGet]
+        public async Task<JsonResult> GetAll()
+        {
+            var employees =  _employeeRepository.GetAllEmployees().ToList();
+            return Json(new { data = employees });
         }
+
         [HttpPost]
-        public async Task<IActionResult> Create(Employee employee)
+        public async Task<JsonResult> AddEmployee(Employee employee)
         {
             try
             {
-                string webRootpath = _webHostEnvironment.WebRootPath;
+                string webRootPath = _webHostEnvironment.WebRootPath;
                 var file = HttpContext.Request.Form.Files;
+
                 if (file.Count > 0)
                 {
                     string newFileName = Guid.NewGuid().ToString();
-                    var upload = Path.Combine(webRootpath, @"Images\EmployeeImage");
+                    var upload = Path.Combine(webRootPath, @"Images\EmployeeImage");
 
                     if (!Directory.Exists(upload))
                     {
                         Directory.CreateDirectory(upload);
-                        Console.WriteLine($"Directory created at: {upload}");
                     }
 
                     var extension = Path.GetExtension(file[0].FileName);
                     using (var fileStream = new FileStream(Path.Combine(upload, newFileName + extension), FileMode.Create))
                     {
-                        file[0].CopyTo(fileStream);
+                        await file[0].CopyToAsync(fileStream);
                     }
-                   employee.Picture = @"\Images\EmployeeImage\" + newFileName + extension;
+                    employee.Picture = @"\Images\EmployeeImage\" + newFileName + extension;
                 }
-                
-                    _employeeRepository.AddEmployee(employee.DateOfBirth, employee.Name, employee.Email, employee.Picture);
-                    TempData["Success"] = "Added Successfully";
-                    return RedirectToAction(nameof(Index));
-                
-                return View();
-               
+
+                _employeeRepository.AddEmployee(employee.DateOfBirth, employee.Name, employee.Email, employee.Picture);
+                return Json(new { success = true, message = "Added Successfully" });
             }
-            catch (Exception ex)
+            catch (Exception)
             {
-                TempData["Error"] = "Db error";
-                return View();
+                return Json(new { success = false, message = "Db error" });
             }
         }
 
         [HttpGet]
-        public async Task<IActionResult> Update(int id)
+        public async Task<JsonResult> GetById(int id)
         {
-            try
-            {
-                var employeeIdbasedDetails = _employeeRepository.GetEmployeeById(id);
-                TempData["Success"] = "Added Successfully";
-                return View(employeeIdbasedDetails);
-            }
-            catch (Exception ex)
-            {
-                TempData["Error"] = "Db error";
-                return View();
-            }
+            var employee =  _employeeRepository.GetEmployeeById(id);
+            return Json(new { data = employee });
         }
 
         [HttpPost]
-        public async Task<IActionResult> Update(Employee employee)
+        public async Task<JsonResult> UpdateEmployee(Employee employee)
         {
             try
             {
-                _employeeRepository.UpdateEmployee(employee.ID, employee.DateOfBirth,employee.Name, employee.Email, employee.Picture); 
-                TempData["Success"] = "Updated Successfully";
-                return RedirectToAction(nameof(Index));
-            }
-            catch (Exception ex)
-            {
-                TempData["Error"] = "Db error";
-                return View();
-            }
-        }
-
-
-        [HttpGet]
-        public async Task<IActionResult> Delete(int id)
-        {
-            try
-            {
-                var employeeIdbasedDetails = _employeeRepository.GetEmployeeById(id);
-
-                TempData["Success"] = "Delete Successfully";
-                return View(employeeIdbasedDetails);
-            }
-            catch (Exception ex)
-            {
-                TempData["Error"] = "Db error";
-                return View();
-            }
-        }
-
-        [HttpPost]
-        public async Task<IActionResult> Delete(Employee employee)
-        {
-            try
-            {
-                var employeeIdbasedDetails = _employeeRepository.GetEmployeeById(employee.ID);
-                
-                    string webRootPath = _webHostEnvironment.WebRootPath;
-                    string fullPath = Path.Combine(webRootPath, employeeIdbasedDetails.Picture); 
-                _employeeRepository.DeleteEmployee(employee.ID);
-
-                if (System.IO.File.Exists(fullPath))
+                var employeeToUpdate =  _employeeRepository.GetEmployeeById(employee.ID);
+                employeeToUpdate.DateOfBirth = employee.DateOfBirth;
+                employeeToUpdate.Name = employee.Name;
+                employeeToUpdate.Email = employee.Email;
+                string webRootPath = _webHostEnvironment.WebRootPath;
+                var file = HttpContext.Request.Form.Files;
+                if (file.Count > 0)
+                {
+                    string fullPath = Path.Combine(webRootPath, employeeToUpdate.Picture);
+                    if (System.IO.File.Exists(fullPath))
                     {
                         System.IO.File.Delete(fullPath);
-                        Console.WriteLine($"Deleted image: {fullPath}");
                     }
-                    else
+
+                    string newFileName = Guid.NewGuid().ToString();
+                    var upload = Path.Combine(webRootPath, @"Images\EmployeeImage");
+                    if (!Directory.Exists(upload))
                     {
-                        Console.WriteLine($"Image not found: {fullPath}");
+                        Directory.CreateDirectory(upload);
                     }
-                
 
+                    var extension = Path.GetExtension(file[0].FileName);
+                    using (var fileStream = new FileStream(Path.Combine(upload, newFileName + extension), FileMode.Create))
+                    {
+                        await file[0].CopyToAsync(fileStream);
+                    }
+                    employeeToUpdate.Picture = @"\Images\EmployeeImage\" + newFileName + extension;
+                }
 
-                TempData["Success"] = "Updated Successfully";
-                return RedirectToAction(nameof(Index));
+                _employeeRepository.UpdateEmployee(employeeToUpdate.ID, employeeToUpdate.DateOfBirth, employeeToUpdate.Name, employeeToUpdate.Email, employeeToUpdate.Picture);
+                return Json(new { success = true, message = "Updated Successfully" });
             }
-            catch (Exception ex)
+            catch (Exception)
             {
-                TempData["Error"] = "Db error";
-                return View();
+                return Json(new { success = false, message = "Db error" });
             }
         }
 
+        [HttpPost]
+        public async Task<JsonResult> DeleteEmployee(int id)
+        {
+            try
+            {
+                var employee =  _employeeRepository.GetEmployeeById(id);
+                if (employee != null)
+                {
+                    string webRootPath = _webHostEnvironment.WebRootPath;
+                    string fullPath = Path.Combine(webRootPath, employee.Picture);
+                    if (System.IO.File.Exists(fullPath))
+                    {
+                        System.IO.File.Delete(fullPath);
+                    }
 
+                    _employeeRepository.DeleteEmployee(id);
+                    return Json(new { success = true, message = "Deleted Successfully" });
+                }
+                return Json(new { success = false, message = "Employee not found" });
+            }
+            catch (Exception)
+            {
+                return Json(new { success = false, message = "Db error" });
+            }
+        }
     }
 }
