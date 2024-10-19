@@ -1,0 +1,46 @@
+﻿@model Employee    
+<div class="container">
+        <h1>Employee Form</h1>
+    <form id="myForm"  method="post" enctype="multipart/form-data">
+            <div class="row">
+                <div class="col-4">
+                <div class="form-group">
+                     <label asp-for="@Model.Name" class="form-label"> </label>
+                    <input asp-for="@Model.Name" class="form-control" required />
+                    <span asp-validation-for="@Model.Name"  class="text-danger"></span>
+                </div>
+                </div>
+            <div class="col-4">
+                <div class="form-group">
+                    <label asp-for="@Model.DateOfBirth" class="form-label"> </label>
+                    <input asp-for="@Model.DateOfBirth" class="form-control" required />
+                    <span asp-validation-for="@Model.DateOfBirth"  class="text-danger"></span>
+                </div>
+            </div>
+
+            <div class="col-4">
+                <div class="form-group">
+                   
+                <label asp-for="@Model.Email" class="form-label"> </label>
+                <input asp-for="@Model.Email" class="form-control" required />
+                <span asp-validation-for="@Model.Email"  class="text-danger"></span>
+                </div>
+            </div>
+
+            <div class="d-flex justify-content-center mt-4">
+                <div class="form-group">
+                    
+                <label asp-for="@Model.Picture" class="form-label"> </label>
+                <input asp-for="@Model.Picture" type="file" class="form-control" required accept="image/*" />
+                <span asp-validation-for="@Model.Email" class="text-danger"></span>
+
+                </div>
+            </div>
+            </div>
+           
+            <div class="col-12 mt-4">
+            <a asp-controller="Employee" asp-action="Index" class="btn btn-danger">Back</a>
+            <button type="submit" class="btn btn-primary">Submit</button>
+            </div>
+        </form>
+    </div>
